@@ -1,40 +1,64 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Microsoft.SemanticKernel.Embeddings;
 
-#pragma warning disable SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-#pragma warning disable SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+using SemanticKernelPlayground.DataIngestion;
+using SemanticKernelPlayground.Models;
+using SemanticKernelPlayground.Plugins;
+
+#pragma warning disable SKEXP0010
+#pragma warning disable SKEXP0001
 
 var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
     .Build();
 
-var modelName = configuration["ModelName"] ?? throw new ApplicationException("ModelName not found");
-var embedding = configuration["EmbeddingModel"] ?? throw new ApplicationException("ModelName not found");
-var endpoint = configuration["Endpoint"] ?? throw new ApplicationException("Endpoint not found");
-var apiKey = configuration["ApiKey"] ?? throw new ApplicationException("ApiKey not found");
+var modelName = configuration["ModelName"]
+    ?? throw new ApplicationException("ModelName not found");
+var embedding = configuration["EmbeddingModel"]
+    ?? throw new ApplicationException("EmbeddingModel not found");
+var endpoint = configuration["Endpoint"]
+    ?? throw new ApplicationException("Endpoint not found");
+var apiKey = configuration["ApiKey"]
+    ?? throw new ApplicationException("ApiKey not found");
 
 var builder = Kernel.CreateBuilder()
     .AddAzureOpenAIChatCompletion(modelName, endpoint, apiKey)
     .AddAzureOpenAITextEmbeddingGeneration(embedding, endpoint, apiKey)
     .AddInMemoryVectorStore();
 
-builder.Services.AddLogging(configure => configure.AddConsole());
-builder.Services.AddLogging(configure => configure.SetMinimumLevel(LogLevel.Information));
+builder.Services.AddLogging(cfg => cfg.AddConsole());
+builder.Services.AddLogging(cfg => cfg.SetMinimumLevel(LogLevel.Information));
+builder.Services.AddSingleton<CodeSearchPlugin>();
 
 var kernel = builder.Build();
-
-// ingesting data to memory
+kernel.ImportPluginFromType<CodeSearchPlugin>();
 var fileList = new List<string>()
 {
     "SampleData/Bobby-Anna-facts.txt",
     "SampleData/Carl-facts.txt"
 };
 
+var reader = new DocumentReader();
+var chunks = reader.Read(@"C:\Users\peter\source\repos\SemanticKernelPlaygroundVenya")   // adjust path to your repo root
+    .ToList();
+
+var uploader = new DataUploader(
+    kernel.GetRequiredService<IVectorStore>(),
+    kernel.GetRequiredService<ITextEmbeddingGenerationService>());
+
+Console.WriteLine("Generating embeddings for code docs…");
+await uploader.UploadAsync("CodeBase", chunks);
+Console.WriteLine($"Ingested {chunks.Count} chunks into 'CodeBase'.");
+Console.WriteLine("Ask me anything about the code!\n");
+
+builder.Services.AddSingleton<DataUploader>();
 var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
 
 AzureOpenAIPromptExecutionSettings openAiPromptExecutionSettings = new()
@@ -51,15 +75,12 @@ do
     Console.ResetColor();
 
     var userInput = Console.ReadLine();
-    if (userInput == "exit")
-    {
-        break;
-    }
+    if (userInput == "exit") break;
 
     history.AddUserMessage(userInput!);
 
-    var streamingResponse =
-        chatCompletionService.GetStreamingChatMessageContentsAsync(
+    var streamingResponse = chatCompletionService
+        .GetStreamingChatMessageContentsAsync(
             history,
             openAiPromptExecutionSettings,
             kernel);
@@ -80,7 +101,6 @@ do
 
     history.AddMessage(AuthorRole.Assistant, fullResponse);
 
-
 } while (true);
-#pragma warning restore SKEXP0010 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-#pragma warning restore SKEXP0001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+#pragma warning restore SKEXP0010
+#pragma warning restore SKEXP0001
