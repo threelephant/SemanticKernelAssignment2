@@ -6,7 +6,7 @@ namespace SemanticKernelPlayground.DataIngestion;
 
     public sealed class DataUploader(
         IVectorStore store,
-        ITextEmbeddingGenerationService embedder)
+        ITextEmbeddingGenerationService textEmbeddingGenerationService)
     {
         public async Task UploadAsync(
             string collectionName,
@@ -18,7 +18,7 @@ namespace SemanticKernelPlayground.DataIngestion;
 
             foreach (var chunk in chunks)
             {
-                chunk.Embedding = await embedder.GenerateEmbeddingAsync(chunk.Text, cancellationToken: ct);
+                chunk.Embedding = await textEmbeddingGenerationService.GenerateEmbeddingAsync(chunk.Text, cancellationToken: ct);
 
                 await collection.UpsertAsync(chunk, ct);
             }
