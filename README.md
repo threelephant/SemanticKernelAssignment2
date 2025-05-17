@@ -8,4 +8,21 @@ A .NET 9 console application that implements a chat interface using Microsoft's 
 - Conversation history management
 
 ## Setup
-1. Configure Azure OpenAI credentials in `appsettings.Development.json`:
+1. Configure Azure OpenAI and GitHub credentials in `appsettings.Development.json`:
+```json
+{
+  "ModelName": "",
+  "Endpoint": "",
+  "ApiKey": "",
+  "GIT_PAT": "",
+  "GIT_NAME": ""
+}
+```
+## Prompts
+
+```
+SetRepo("...")
+```
+```
+Create release notes from the last 10 commits, bump patch, commit the updated version.json and push to origin/master.
+```
