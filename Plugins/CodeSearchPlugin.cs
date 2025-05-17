@@ -12,7 +12,8 @@ public sealed class CodeSearchPlugin(
     IVectorStore store,
     ITextEmbeddingGenerationService embedder)
 {
-    [KernelFunction, Description("Search the code docs as text")]
+    [KernelFunction, Description("Search the CodeBase for relevant code snippets. Return file name, paragraph ID, snippet text, and relevance score.")]
+    [Obsolete("Obsolete")]
     public async Task<string> SearchCodeAsync(
         string query,
         Kernel kernel,

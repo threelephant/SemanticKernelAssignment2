@@ -21,8 +21,8 @@ A .NET 9 console application that implements a chat interface using Microsoft's 
 ## Prompts
 
 ```
-SetRepo("...")
+Search: What is the DataUploader class?
 ```
 ```
-Create release notes from the last 10 commits, bump patch, commit the updated version.json and push to origin/master.
+Search plugins
 ```

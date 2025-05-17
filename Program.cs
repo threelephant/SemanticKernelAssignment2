@@ -8,7 +8,6 @@ using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 using Microsoft.SemanticKernel.Embeddings;
 
 using SemanticKernelPlayground.DataIngestion;
-using SemanticKernelPlayground.Models;
 using SemanticKernelPlayground.Plugins;
 
 #pragma warning disable SKEXP0010
@@ -27,6 +26,8 @@ var endpoint = configuration["Endpoint"]
     ?? throw new ApplicationException("Endpoint not found");
 var apiKey = configuration["ApiKey"]
     ?? throw new ApplicationException("ApiKey not found");
+var repoPath = configuration["RepoPath"]
+    ?? throw new ApplicationException("RepoPath not found");
 
 var builder = Kernel.CreateBuilder()
     .AddAzureOpenAIChatCompletion(modelName, endpoint, apiKey)
@@ -39,14 +40,9 @@ builder.Services.AddSingleton<CodeSearchPlugin>();
 
 var kernel = builder.Build();
 kernel.ImportPluginFromType<CodeSearchPlugin>();
-var fileList = new List<string>()
-{
-    "SampleData/Bobby-Anna-facts.txt",
-    "SampleData/Carl-facts.txt"
-};
 
 var reader = new DocumentReader();
-var chunks = reader.Read(@"C:\Users\peter\source\repos\SemanticKernelPlaygroundVenya")   // adjust path to your repo root
+var chunks = reader.Read(repoPath) 
     .ToList();
 
 var uploader = new DataUploader(
