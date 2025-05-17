@@ -5,7 +5,7 @@ namespace SemanticKernelPlayground.DataIngestion;
 
 public sealed class DocumentReader
 {
-    private static readonly string[] AllowedExts = { ".cs", ".md", ".txt", ".json" };
+    private static readonly string[] AllowedExts = { ".cs", ".md", ".txt", ".json", ".py", ".js", ".html", ".css", ".ts", ".yml", ".yaml" };
 
     public IEnumerable<TextChunk> Read(string root)
     {

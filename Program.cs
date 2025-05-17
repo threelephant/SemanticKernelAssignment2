@@ -52,6 +52,21 @@ var uploader = new DataUploader(
 Console.WriteLine("Generating embeddings for code docs…");
 await uploader.UploadAsync("CodeBase", chunks);
 Console.WriteLine($"Ingested {chunks.Count} chunks into 'CodeBase'.");
+
+var fileStats = chunks
+    .GroupBy(c => Path.GetExtension(c.FileName).TrimStart('.'))
+    .OrderByDescending(g => g.Count())
+    .ToDictionary(g => g.Key, g => g.Count());
+
+Console.WriteLine("\n--- Repository Stats ---");
+Console.WriteLine($"Total files processed: {chunks.Select(c => c.FileName).Distinct().Count()}");
+Console.WriteLine("Files by type:");
+foreach (var stat in fileStats)
+{
+    Console.WriteLine($"  .{stat.Key}: {stat.Value} chunks");
+}
+Console.WriteLine("---------------------\n");
+
 Console.WriteLine("Ask me anything about the code!\n");
 
 builder.Services.AddSingleton<DataUploader>();
@@ -72,6 +87,25 @@ do
 
     var userInput = Console.ReadLine();
     if (userInput == "exit") break;
+    
+    if (userInput?.Trim().Equals("export", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var filename = $"conversation_{timestamp}.md";
+        
+        using (var writer = new StreamWriter(filename))
+        {
+            foreach (var message in history)
+            {
+                writer.WriteLine($"## {message.Role}");
+                writer.WriteLine(message.Content);
+                writer.WriteLine();
+            }
+        }
+        
+        Console.WriteLine($"Conversation exported to {filename}");
+        continue;
+    }
 
     history.AddUserMessage(userInput!);
 

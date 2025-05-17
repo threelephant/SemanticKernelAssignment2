@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Data;
 using Microsoft.SemanticKernel.Embeddings;
 using SemanticKernelPlayground.Models;
+#pragma warning disable CS0618
 
 namespace SemanticKernelPlayground.Plugins;
 
@@ -13,10 +14,11 @@ public sealed class CodeSearchPlugin(
     ITextEmbeddingGenerationService embedder)
 {
     [KernelFunction, Description("Search the CodeBase for relevant code snippets. Return file name, paragraph ID, snippet text, and relevance score.")]
-    [Obsolete("Obsolete")]
     public async Task<string> SearchCodeAsync(
         string query,
         Kernel kernel,
+        [Description("Optional file extension filter (e.g., 'cs' or 'py')")]
+        string? fileExtension = null,
         CancellationToken ct = default)
     {
         var coll = store.GetCollection<string, TextChunk>("CodeBase");
@@ -28,6 +30,13 @@ public sealed class CodeSearchPlugin(
         var sb = new StringBuilder();
         await foreach (var r in results.Results.WithCancellation(ct))
         {
+            if (!string.IsNullOrEmpty(fileExtension) &&
+                r.Name != null &&
+                !r.Name.EndsWith($".{fileExtension}", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            
             sb.AppendLine($"**{r.Name}**:\n{r.Value}\n");
         }
 
