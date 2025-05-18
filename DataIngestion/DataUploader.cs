@@ -4,23 +4,23 @@ using SemanticKernelPlayground.Models;
 
 namespace SemanticKernelPlayground.DataIngestion;
 
-    public sealed class DataUploader(
-        IVectorStore store,
-        ITextEmbeddingGenerationService textEmbeddingGenerationService)
+public sealed class DataUploader(
+    IVectorStore store,
+    ITextEmbeddingGenerationService textEmbeddingGenerationService)
+{
+    public async Task UploadAsync(
+        string collectionName,
+        IEnumerable<TextChunk> chunks,
+        CancellationToken ct = default)
     {
-        public async Task UploadAsync(
-            string collectionName,
-            IEnumerable<TextChunk> chunks,
-            CancellationToken ct = default)
+        var collection = store.GetCollection<string, TextChunk>(collectionName);
+        await collection.CreateCollectionIfNotExistsAsync(ct);
+
+        foreach (var chunk in chunks)
         {
-            var collection = store.GetCollection<string, TextChunk>(collectionName);
-            await collection.CreateCollectionIfNotExistsAsync(ct);
+            chunk.Embedding = await textEmbeddingGenerationService.GenerateEmbeddingAsync(chunk.Text, cancellationToken: ct);
 
-            foreach (var chunk in chunks)
-            {
-                chunk.Embedding = await textEmbeddingGenerationService.GenerateEmbeddingAsync(chunk.Text, cancellationToken: ct);
-
-                await collection.UpsertAsync(chunk, ct);
-            }
+            await collection.UpsertAsync(chunk, ct);
         }
     }
+}

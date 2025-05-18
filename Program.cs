@@ -92,8 +92,8 @@ do
     {
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var filename = $"conversation_{timestamp}.md";
-        
-        using (var writer = new StreamWriter(filename))
+
+        await using (var writer = new StreamWriter(filename))
         {
             foreach (var message in history)
             {

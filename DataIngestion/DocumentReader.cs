@@ -5,13 +5,13 @@ namespace SemanticKernelPlayground.DataIngestion;
 
 public sealed class DocumentReader
 {
-    private static readonly string[] AllowedExts = { ".cs", ".md", ".txt", ".json", ".py", ".js", ".html", ".css", ".ts", ".yml", ".yaml" };
+    private static readonly string[] AllowedExts = [".cs", ".md", ".txt", ".json", ".py", ".js", ".html", ".css", ".ts", ".yml", ".yaml"];
 
     public IEnumerable<TextChunk> Read(string root)
     {
         foreach (var file in Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories))
         {
-            var ext = Path.GetExtension(file)!;
+            var ext = Path.GetExtension(file);
             if (!AllowedExts.Contains(ext, StringComparer.OrdinalIgnoreCase)) continue;
             if (file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") ||
                 file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") ||
